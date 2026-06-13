@@ -18,7 +18,6 @@ export interface SubmitPayload {
   deviceHash: string;
   sessionCount: number;
   clientType: string;
-  username: string;
 }
 
 export function getDeviceHash(): string {
@@ -31,9 +30,8 @@ export function buildPayload(opts: {
   profile: Profile;
   handle?: string;
   clientType?: string;
-  username?: string;
 }): SubmitPayload {
-  const { metrics, profile, handle = 'anonymous', clientType = 'Claude Code', username = os.userInfo().username } = opts;
+  const { metrics, profile, handle = os.userInfo().username, clientType = 'Claude Code' } = opts;
 
   // Payload carries only numeric scores — no session content, no prompt text, no message body
   return {
@@ -51,7 +49,6 @@ export function buildPayload(opts: {
     deviceHash: getDeviceHash(),
     sessionCount: metrics.sessionCount,
     clientType,
-    username,
   };
 }
 
@@ -72,7 +69,6 @@ export async function submitPayload(
       hands_off_score: payload.scores.handsOffRatio,
       run_length_score: payload.scores.runLength,
       client_type: payload.clientType,
-      username: payload.username,
     }),
   });
 
