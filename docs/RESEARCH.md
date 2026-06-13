@@ -6,7 +6,7 @@ As AI-assisted development tools evolve from simple code completion to multi-age
 
 This framework characterizes developer autonomy across four measurable axes derived from agent session logs:
 
-- **Parallelism (40% weight)**: The peak and sustained number of overlapping agent sessions, log-scaled so that 8–10 concurrent sessions approaches full score
+- **Parallelism (40% weight)**: Concurrently active sessions measured by overlapping activity bursts — sessions open but idle (no events for 30+ minutes) do not count, log-scaled so that 8–10 concurrent active sessions approaches full score
 - **Delegation Depth (25% weight)**: Tool calls per human turn × subagent fan-out
 - **Hands-off Ratio (25% weight)**: Inverse of human characters typed per agent tool call
 - **Run Length (10% weight)**: Mean uninterrupted agent streak without human interruption
@@ -15,7 +15,7 @@ Research from 2024–2025 on tools including Claude Code, Devin, Cursor, GitHub 
 
 ## Developer Autonomy Profiles
 
-Six profiles span the full range from hands-on coding to fleet orchestration. The composite score maps directly to a profile; boundaries are grounded in observed saturation points from real agentic workflows.
+Five profiles span the full range from hands-on coding to fleet orchestration. The composite score maps directly to a profile; boundaries are grounded in observed saturation points from real agentic workflows.
 
 ---
 

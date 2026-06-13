@@ -73,7 +73,7 @@ npx agentry-cli scan --last-n 20
 
 | Axis | Weight | What it captures |
 |------|--------|-----------------|
-| Parallelism | 40% | Peak and sustained concurrent agent sessions |
+| Parallelism | 40% | Concurrently active sessions — idle open sessions don't count, only overlapping activity bursts |
 | Delegation depth | 25% | Tool calls per human turn — how much you let the agent do |
 | Hands-off ratio | 25% | Inverse of your keystrokes per agent tool call |
 | Run length | 10% | Mean uninterrupted agent streak |

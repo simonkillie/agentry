@@ -36,7 +36,7 @@ function axisInsight(metrics: Metrics): string {
 
 const program = new Command();
 
-program.name('agentry').description('Measure developer autonomy from agent session data').version('1.0.2');
+program.name('agentry').description('Measure developer autonomy from agent session data').version('1.0.5');
 
 program
   .command('scan')
