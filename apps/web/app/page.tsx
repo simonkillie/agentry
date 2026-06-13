@@ -1,5 +1,8 @@
 import { getLeaderboard, Entry } from '../lib/db';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const PROFILE_EMOJI: Record<string, string> = {
   'Fleet Orchestrator': '🚀',
   'Hands-Off Architect': '🏛️',
