@@ -3,7 +3,7 @@ import * as os from 'os';
 import { Command } from 'commander';
 import { scan } from './scanner';
 import { computeMetrics } from './metrics';
-import { mapProfile, PROFILES, Profile } from './profiles';
+import { mapProfile, PROFILES } from './profiles';
 import { buildPayload, submitPayload } from './submit';
 import { Metrics } from './metrics';
 
