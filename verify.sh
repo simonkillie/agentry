@@ -14,6 +14,7 @@ fail() { echo "FAIL $*"; exit 1; }
 command -v node >/dev/null || fail "node missing"
 [ -n "${VERCEL_TOKEN:-}" ] || fail "VERCEL_TOKEN not set"
 [ -n "${DATABASE_URL:-}" ] || fail "DATABASE_URL not set"
+[ -n "${NPM_TOKEN:-}" ] || fail "NPM_TOKEN not set"
 
 # 1. install
 npm install --workspaces --include-workspace-root >/tmp/install.log 2>&1 || fail "install failed"
@@ -73,5 +74,15 @@ if ! { curl -s "$URL/api/leaderboard" | grep -q "$marker"; } \
    && ! { curl -s "$URL" | grep -q "$marker"; }; then
   fail "submitted test entry did not appear on the live leaderboard"
 fi
+
+# 13. npm package published
+npm view agentry-cli version >/dev/null 2>&1 || fail "npm package agentry-cli not published to registry"
+
+# 14. npx distribution works end-to-end
+timeout 90 npx --yes agentry-cli@latest scan >/tmp/npx.log 2>&1 || fail "npx agentry-cli scan failed"
+grep -qi "dry" /tmp/npx.log || fail "npx agentry-cli scan does not default to dry-run"
+
+# 15. README documents npx usage
+grep -qiE "npx agentry" README.md || fail "README does not document npx agentry usage"
 
 echo "VERIFY OK $URL"

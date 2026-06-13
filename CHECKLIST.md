@@ -30,9 +30,19 @@ PROGRESS.md updated every turn. The final state is `verify.sh` printing `VERIFY 
 - [x] `/api/leaderboard` returns standings
 - [x] Leaderboard page renders ranked entries with profile, seeded sample rows visible
 
-## Docs and ship
+## Docs and ship (MVP)
 - [x] README.md: what it is, the metric, the privacy model, how to run, submitting is optional
 - [x] `vercel deploy --prod` succeeds, production URL captured
 - [x] Live home returns 200 and renders the leaderboard
 - [x] Live `/api/submit` persists a test entry that then appears on the live leaderboard
-- [x] `bash verify.sh` prints `VERIFY OK <url>` with no FAIL lines
+- [x] `bash verify.sh` prints `VERIFY OK <url>` with no FAIL lines (MVP)
+
+## Distribution (Phase 2)
+- [ ] GitHub repo renamed from `aitonomy` to `agentry`
+- [ ] Git remote updated to `github.com/simonkillie/agentry`
+- [ ] Vercel project renamed so production URL is `https://agentry.vercel.app`
+- [ ] CLI default submit endpoint updated to `https://agentry.vercel.app/api/submit`
+- [ ] `packages/cli` npm package name set to `agentry-cli`, files field set, .npmrc configured
+- [ ] `npm publish` succeeds: package `agentry-cli` live on npm registry
+- [ ] README updated: new GitHub URL, new web URL, npx usage prominently documented
+- [ ] `bash verify.sh` prints `VERIFY OK` with all 15 checks including npm + npx

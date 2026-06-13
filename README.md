@@ -2,9 +2,22 @@
 
 Measure how autonomously a developer works — scored from real agent session data, not self-reporting.
 
+**[Live leaderboard →](https://agentry.vercel.app)** · **[GitHub →](https://github.com/simonkillie/agentry)**
+
+## Quick start
+
+```bash
+# Zero-install: scan your sessions and see your score
+npx agentry-cli scan
+
+# Or install globally
+npm install -g agentry-cli
+agentry scan
+```
+
 ## What it measures
 
-agentry reads your local Claude Code and Codex session logs and derives a numeric **Composite Autonomy Score** (0–100) from four axes:
+agentry reads your local Claude Code and Codex session logs and derives a **Composite Autonomy Score** (0–100) from four axes:
 
 | Axis | Weight | What it captures |
 |------|--------|-----------------|
@@ -19,8 +32,6 @@ agentry **never reads, stores, or transmits prompt text, code, file paths, or re
 
 ## Profiles
 
-Scores map to one of five profiles:
-
 | Profile | Score |
 |---------|-------|
 | Hand-Coder | 0–19 |
@@ -29,44 +40,46 @@ Scores map to one of five profiles:
 | Hands-Off Architect | 70–84 |
 | Fleet Orchestrator | 85–100 |
 
-## How to run
+## CLI usage
 
 ```bash
-# Install
-npm install -g @agentry/cli
-
-# Scan and print report (dry-run by default — no data sent)
+# Scan (dry-run by default — no data sent anywhere)
 agentry scan
 
-# Optionally submit your score to the public leaderboard
+# See exactly what would be submitted, then send it
+agentry scan
 agentry scan --submit --handle yourname
+
+# Limit scope
+agentry scan --days 3
+agentry scan --last-n 20
 ```
 
-## Submitting is optional
+Submitting is **optional**. Running `agentry scan` without `--submit` never contacts the network.
 
-Running `agentry scan` without `--submit` **never contacts the network**. It only prints the JSON payload that would be sent so you can inspect it first. Use `--submit` only if you choose to share your score.
+## Data sources
+
+- **Claude Code**: `~/.claude/projects/<encoded-path>/<session-id>.jsonl`
+- **Codex**: `~/.codex/sessions/YYYY/MM/DD/rollout-<ts>-<uuid>.jsonl` (honor `CODEX_HOME`)
 
 ## Development
 
 This is an npm workspaces monorepo:
 
 ```
-packages/cli   — the CLI tool
-apps/web       — the Next.js leaderboard app
+packages/cli   — the CLI tool (published as agentry-cli)
+apps/web       — the Next.js leaderboard (https://agentry.vercel.app)
 docs/          — research and profile documentation
 ```
 
 ```bash
+git clone https://github.com/simonkillie/agentry
 npm install
 npm run build          # build all packages
 npm test               # run all tests
 npm run typecheck      # typecheck all packages
 npm run lint           # lint all packages
 ```
-
-## Deploy
-
-The web app is deployed on Vercel. Set `DATABASE_URL` (Neon PostgreSQL) in the Vercel project environment variables.
 
 ## License
 
