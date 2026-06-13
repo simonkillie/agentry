@@ -51,7 +51,7 @@ export function buildPayload(opts: {
 
 export async function submitPayload(
   payload: SubmitPayload,
-  endpoint = 'https://agentry.vercel.app/api/submit',
+  endpoint = 'https://agentry-hq.vercel.app/api/submit',
 ): Promise<{ ok: boolean; message: string }> {
   const response = await fetch(endpoint, {
     method: 'POST',
