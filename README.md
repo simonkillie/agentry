@@ -61,7 +61,7 @@ npx agentry-cli scan
 # Submit to leaderboard
 npx agentry-cli scan --submit
 
-# Custom display name (defaults to your OS username)
+# Custom display name (defaults to an anonymous dev-xxxxxx handle)
 npx agentry-cli scan --submit --handle yourname
 
 # Limit scope
@@ -90,7 +90,9 @@ npx agentry-cli scan --last-n 20
 
 ## Privacy
 
-agentry **never reads, stores, or transmits prompt text, code, file paths, or repo names**. It only reads event types, timestamps, and tool-call counts. The submit payload is numeric scores + your chosen handle + a one-way device hash for deduplication.
+agentry **never reads, stores, or transmits prompt text, code, file paths, or repo names**. It only reads event types, timestamps, and tool-call counts.
+
+The submit payload contains only numeric scores, your profile, the client type, an **anonymous handle** (defaults to `dev-xxxxxx` — never your OS username; override with `--handle`), and an anonymous device id. The device id is derived from a random value stored locally in `~/.agentry/install-id`, **not** from your hostname or username, so it can't be reconstructed or traced back to your machine — it only lets the leaderboard deduplicate repeat submissions. Nothing is sent unless you pass `--submit`.
 
 ## Data sources
 

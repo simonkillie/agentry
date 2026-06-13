@@ -1,10 +1,9 @@
 #!/usr/bin/env node
-import * as os from 'os';
 import { Command } from 'commander';
 import { scan } from './scanner';
 import { computeMetrics } from './metrics';
 import { mapProfile, PROFILES } from './profiles';
-import { buildPayload, submitPayload } from './submit';
+import { buildPayload, submitPayload, getDefaultHandle } from './submit';
 import { Metrics } from './metrics';
 
 const W = 32; // bar width
@@ -40,13 +39,13 @@ function axisInsight(metrics: Metrics): string {
 
 const program = new Command();
 
-program.name('agentry').description('Measure developer autonomy from agent session data').version('1.0.7');
+program.name('agentry').description('Measure developer autonomy from agent session data').version('1.0.8');
 
 program
   .command('scan')
   .description('Scan agent sessions and compute autonomy score')
   .option('--submit', 'Submit score to the leaderboard (opt-in only)')
-  .option('--handle <name>', 'Name to display on the leaderboard (defaults to OS username)')
+  .option('--handle <name>', 'Name to display on the leaderboard (defaults to an anonymous dev-xxxxxx handle)')
   .option('--last-n <n>', 'Cap on sessions returned after the --days filter (each session = one Claude Code/Codex conversation)', '50')
   .option('--days <d>', 'Number of days to look back (--last-n cap applies after this filter)', '7')
   .action(async (opts: { submit?: boolean; handle?: string; lastN: string; days: string }) => {
@@ -81,7 +80,7 @@ program
       else if (codexCount > 0) clientType = 'Codex';
       else clientType = 'Claude Code';
 
-      const handle = opts.handle ?? os.userInfo().username;
+      const handle = opts.handle ?? getDefaultHandle();
       const payload = buildPayload({ metrics, profile, handle, clientType });
 
       const score = metrics.composite;
@@ -129,6 +128,8 @@ program
 
       if (opts.submit) {
         console.log(`  Posting to leaderboard as "${handle}"…`);
+        console.log('  Sending: scores (numeric), profile, client type, and an anonymous device id.');
+        console.log('  No prompts, code, file paths, or your OS username are sent.');
         console.log('');
         const result = await submitPayload(payload);
         if (result.ok) {
@@ -146,7 +147,8 @@ program
         console.log('');
         console.log('  https://agentry-cli.vercel.app');
         console.log('');
-        console.log('  Dry run — nothing leaves your machine without --submit.');
+        console.log(`  Dry run — nothing leaves your machine without --submit.`);
+        console.log(`  On submit, you appear as "${handle}" (anonymous). Use --handle to choose a name.`);
       }
 
       console.log(sep);

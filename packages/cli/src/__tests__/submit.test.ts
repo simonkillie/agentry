@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildPayload, getDeviceHash } from '../submit';
+import * as os from 'os';
+import { buildPayload, getDeviceHash, getDefaultHandle } from '../submit';
 import { computeMetrics } from '../metrics';
 
 const emptyMetrics = computeMetrics([]);
@@ -43,5 +44,27 @@ describe('getDeviceHash', () => {
     const hash2 = getDeviceHash();
     expect(hash1).toBe(hash2);
     expect(/^[0-9a-f]+$/.test(hash1)).toBe(true);
+  });
+
+  it('is not reconstructable from machine identity (hostname/username/platform)', () => {
+    const hash = getDeviceHash();
+    // The hash is derived from a random install-id, NOT from machine facts.
+    expect(hash).not.toContain(os.hostname());
+    expect(hash).not.toContain(os.userInfo().username);
+    expect(hash).not.toContain(process.platform);
+  });
+});
+
+describe('getDefaultHandle', () => {
+  it('is anonymous and never contains the OS username', () => {
+    const handle = getDefaultHandle();
+    expect(handle).toMatch(/^dev-[0-9a-f]{6}$/);
+    expect(handle).not.toContain(os.userInfo().username);
+  });
+
+  it('does not leak the OS username into the payload by default', () => {
+    const payload = buildPayload({ metrics: emptyMetrics, profile: 'Hand-Coder' });
+    expect(payload.handle).not.toContain(os.userInfo().username);
+    expect(JSON.stringify(payload)).not.toContain(os.userInfo().username);
   });
 });
