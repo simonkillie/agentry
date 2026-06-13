@@ -1,4 +1,5 @@
 import { getLeaderboard, Entry } from '../lib/db';
+import CopyPrompt from './CopyPrompt';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -84,7 +85,7 @@ export default async function Home() {
         <div className="agent-box">
           <div className="agent-box-title">Get your score</div>
           <p>Paste this into your agent. It will scan your sessions and submit your score. Sharing is optional — remove <code style={{display:'inline',background:'transparent',border:'none',padding:0,color:'#9ca3af',fontSize:'inherit'}}>--submit</code> for a local-only dry run.</p>
-          <code>Run `npx agentry-cli scan --submit` to measure my autonomy score and post it to the agentry leaderboard. Only numeric session metadata is transmitted — no prompts, code, or file paths.</code>
+          <CopyPrompt />
         </div>
 
         {error ? (
