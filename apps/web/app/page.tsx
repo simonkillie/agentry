@@ -43,7 +43,7 @@ export default async function Home() {
         a:hover { color: #fff; }
         .container { max-width: 720px; margin: 0 auto; padding: 64px 24px; }
         .header { margin-bottom: 48px; }
-        .wordmark { font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #4b5563; margin-bottom: 20px; }
+        .wordmark { font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: #6b7280; margin-bottom: 20px; }
         .title { font-size: 26px; font-weight: 700; color: #f5f5f5; margin-bottom: 8px; letter-spacing: -0.02em; }
         .subtitle { color: #6b7280; font-size: 13px; max-width: 520px; line-height: 1.6; }
         .subtitle strong { color: #9ca3af; font-weight: 500; }
@@ -52,16 +52,16 @@ export default async function Home() {
         .table thead tr { border-bottom: 1px solid #1f1f1f; }
         .table th { text-align: left; padding: 0 12px 12px; font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #4b5563; }
         .table th:first-child { width: 36px; }
-        .table th:nth-child(3) { width: 110px; }
+        .table th:nth-child(3) { width: 120px; }
         .table th:nth-child(5) { width: 90px; }
         .table tbody tr { border-bottom: 1px solid #111; }
         .table tbody tr:hover { background: #111; }
         .table td { padding: 13px 12px; vertical-align: middle; }
-        .rank { color: #374151; font-size: 12px; font-variant-numeric: tabular-nums; }
+        .rank { color: #6b7280; font-size: 12px; font-variant-numeric: tabular-nums; font-weight: 600; }
         .handle { font-weight: 500; color: #d1d5db; }
         .score-cell { display: flex; align-items: center; gap: 10px; }
-        .score-bar-track { width: 56px; height: 3px; background: #1f1f1f; border-radius: 2px; flex-shrink: 0; }
-        .score-bar-fill { height: 3px; border-radius: 2px; }
+        .score-bar-track { width: 72px; height: 5px; background: #1f1f1f; border-radius: 3px; flex-shrink: 0; }
+        .score-bar-fill { height: 5px; border-radius: 3px; }
         .score-num { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; color: #e5e5e5; }
         .profile-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; color: #9ca3af; }
         .profile-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
@@ -69,9 +69,16 @@ export default async function Home() {
         .client-badge.claude { color: #f59e0b; border-color: #292310; background: #141008; }
         .client-badge.codex { color: #60a5fa; border-color: #0d1929; background: #070d1a; }
         .empty { text-align: center; padding: 48px 12px; color: #374151; font-size: 13px; }
-        .agent-box { margin-bottom: 48px; border: 1px solid #1a1a1a; border-radius: 8px; padding: 20px 24px; background: #0a0a0a; }
-        .agent-box-title { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #4b5563; margin-bottom: 10px; }
-        .agent-box p { font-size: 13px; color: #6b7280; margin-bottom: 14px; line-height: 1.6; }
+        .agent-box { margin-bottom: 48px; border: 1px solid #2a2a2a; border-left: 3px solid #4b5563; border-radius: 8px; padding: 20px 24px; background: #111; }
+        .agent-box-title { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #6b7280; margin-bottom: 12px; }
+        .steps { list-style: none; margin-bottom: 16px; display: flex; flex-direction: column; gap: 6px; }
+        .steps li { font-size: 13px; color: #6b7280; display: flex; gap: 10px; line-height: 1.5; }
+        .steps li .step-num { color: #4b5563; font-variant-numeric: tabular-nums; min-width: 16px; flex-shrink: 0; }
+        .steps li .step-text { color: #9ca3af; }
+        .steps li .step-text strong { color: #d1d5db; font-weight: 500; }
+        .privacy-note { font-size: 11px; color: #374151; margin-top: 12px; line-height: 1.6; }
+        .privacy-note a { color: #4b5563; text-decoration: underline; text-underline-offset: 2px; }
+        .privacy-note a:hover { color: #6b7280; }
         .profiles-grid { margin-top: 48px; }
         .profiles-grid-title { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #4b5563; margin-bottom: 14px; }
         .profile-row { display: flex; align-items: baseline; gap: 10px; padding: 9px 0; border-bottom: 1px solid #111; }
@@ -84,21 +91,38 @@ export default async function Home() {
         .footer-links { display: flex; gap: 16px; font-size: 12px; color: #4b5563; white-space: nowrap; flex-shrink: 0; }
         .footer-links a:hover { color: #9ca3af; }
         .error { padding: 16px; border: 1px solid #1f1f1f; border-radius: 6px; color: #f87171; font-size: 12px; }
+        @media (max-width: 600px) {
+          .container { padding: 40px 16px; }
+          .table th:nth-child(4), .table td:nth-child(4) { display: none; }
+          .table th:nth-child(5), .table td:nth-child(5) { display: none; }
+          .footer { flex-direction: column; align-items: flex-start; gap: 12px; }
+          .profile-row { flex-wrap: wrap; }
+          .agent-box { padding: 16px; }
+        }
       `}</style>
       <div className="container">
         <header className="header">
           <div className="wordmark">agentry</div>
           <h1 className="title">Who lets their agent run?</h1>
           <p className="subtitle">
-            Autonomy scores derived from Claude Code and Codex session data — not self-reported.
-            Paste the prompt below into your agent to get scored. Submitting to the leaderboard is <strong>optional</strong>.
+            Scores how autonomously you work — derived from real Claude Code and Codex session data, not self-reported.
+            Paste the prompt below into your agent and it will scan your local logs and score you.
+            Submitting to the leaderboard is <strong>optional</strong>.
           </p>
         </header>
 
         <div className="agent-box">
           <div className="agent-box-title">Get your score</div>
-          <p>Paste this into your agent. It scans your local session logs, scores you, and posts the result. Nothing leaves your machine until it asks.</p>
+          <ol className="steps">
+            <li><span className="step-num">1.</span><span className="step-text">Copy the prompt below</span></li>
+            <li><span className="step-num">2.</span><span className="step-text">Paste it into <strong>Claude Code or Codex</strong> as a message to your agent</span></li>
+            <li><span className="step-num">3.</span><span className="step-text">Your score appears in your terminal — sharing is <strong>optional</strong></span></li>
+          </ol>
           <CopyPrompt />
+          <p className="privacy-note">
+            Reads only event types, timestamps, and tool-call counts from <code style={{fontSize:'10px',color:'#4b5563'}}>~/.claude/</code> and <code style={{fontSize:'10px',color:'#4b5563'}}>~/.codex/</code> — no prompt text, code, or file paths ever leave your machine.{' '}
+            <a href="https://github.com/simonkillie/agentry" target="_blank" rel="noopener">Source code on GitHub.</a>
+          </p>
         </div>
 
         {error ? (
@@ -141,9 +165,7 @@ export default async function Home() {
                         </div>
                       </td>
                       <td>
-                        {entry.client_type && (
-                          <span className={`client-badge ${clientClass}`}>{entry.client_type}</span>
-                        )}
+                        <span className={`client-badge ${clientClass}`}>{entry.client_type ?? '—'}</span>
                       </td>
                     </tr>
                   );

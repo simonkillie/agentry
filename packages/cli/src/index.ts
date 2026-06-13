@@ -14,6 +14,10 @@ function bar(value: number, max = 100): string {
   return '█'.repeat(filled) + '░'.repeat(W - filled);
 }
 
+function plural(n: number, word: string): string {
+  return `${n} ${word}${n === 1 ? '' : 's'}`;
+}
+
 function axisInsight(metrics: Metrics): string {
   const axes = [
     { label: 'Parallelism', value: metrics.parallelism, tip: 'run concurrent sessions to push this up' },
@@ -30,25 +34,44 @@ function axisInsight(metrics: Metrics): string {
   if (strongest.value > 70) {
     return `${strongest.label} is your strongest signal — build on it.`;
   }
-  return `Score is balanced. Delegate larger tasks end-to-end to push higher.`;
+  return `Score is balanced. Weakest axis: ${weakest.label} (${weakest.value.toFixed(0)}) — ${weakest.tip}.`;
 }
 
 
 const program = new Command();
 
-program.name('agentry').description('Measure developer autonomy from agent session data').version('1.0.5');
+program.name('agentry').description('Measure developer autonomy from agent session data').version('1.0.6');
 
 program
   .command('scan')
   .description('Scan agent sessions and compute autonomy score')
   .option('--submit', 'Submit score to the leaderboard (opt-in only)')
   .option('--handle <name>', 'Name to display on the leaderboard (defaults to OS username)')
-  .option('--last-n <n>', 'Maximum number of recent sessions to include', '50')
-  .option('--days <d>', 'Number of days to look back', '7')
+  .option('--last-n <n>', 'Cap on sessions returned after the --days filter (each session = one Claude Code/Codex conversation)', '50')
+  .option('--days <d>', 'Number of days to look back (--last-n cap applies after this filter)', '7')
   .action(async (opts: { submit?: boolean; handle?: string; lastN: string; days: string }) => {
     try {
       const sessions = await scan({ lastN: parseInt(opts.lastN), days: parseInt(opts.days) });
       const metrics = computeMetrics(sessions);
+
+      const sep = '─'.repeat(48);
+
+      // Zero sessions — show a helpful no-data message instead of a fake 0/100 score
+      if (metrics.sessionCount === 0) {
+        console.log(`\n${sep}`);
+        console.log('  agentry · Autonomy Score');
+        console.log(sep);
+        console.log('');
+        console.log(`  No session logs found in the last ${opts.days} days.`);
+        console.log('');
+        console.log('  Make sure Claude Code or Codex is installed and you\'ve used it recently.');
+        console.log(`  Try: agentry scan --days 30   to look further back.`);
+        console.log('');
+        console.log(sep);
+        console.log('');
+        return;
+      }
+
       const profile = mapProfile(metrics.composite);
 
       const claudeCount = sessions.filter(s => s.source === 'claude').length;
@@ -61,40 +84,46 @@ program
       const handle = opts.handle ?? os.userInfo().username;
       const payload = buildPayload({ metrics, profile, handle, clientType });
 
-      const sep = '─'.repeat(48);
       const score = metrics.composite;
+      const profileData = PROFILES.find(p => p.name === profile);
+      const profileRange = profileData ? `  ${profileData.min}–${profileData.max}` : '';
 
       console.log(`\n${sep}`);
       console.log('  agentry · Autonomy Score');
       console.log(sep);
       console.log('');
       console.log(`  ${score.toFixed(1)} / 100`);
-      console.log(`  ${bar(score)}  ${profile}`);
+      console.log(`  ${bar(score)}  ${profile}${profileRange}`);
       console.log('');
 
-      const profileData = PROFILES.find(p => p.name === profile);
       if (profileData) {
         console.log(`  ${profileData.description}.`);
       }
       console.log('');
-      console.log(`  ${metrics.sessionCount} sessions · ${clientType} · last ${opts.days ?? 7} days`);
+      console.log(`  ${plural(metrics.sessionCount, 'session')} · ${clientType} · last ${opts.days ?? 7} days`);
       console.log('');
       console.log(sep);
-      console.log('  Breakdown');
+      console.log('  Breakdown  (weight = share of composite score)');
       console.log('');
 
       const axes = [
-        { label: 'Parallelism ', value: metrics.parallelism, weight: '40%' },
-        { label: 'Delegation  ', value: metrics.delegationDepth, weight: '25%' },
-        { label: 'Hands-off   ', value: metrics.handsOffRatio, weight: '25%' },
-        { label: 'Run Length  ', value: metrics.runLength, weight: '10%' },
+        { label: 'Parallelism ', value: metrics.parallelism, weight: '40%', gloss: 'concurrent sessions' },
+        { label: 'Delegation  ', value: metrics.delegationDepth, weight: '25%', gloss: 'tool calls per turn' },
+        { label: 'Hands-off   ', value: metrics.handsOffRatio, weight: '25%', gloss: 'less typing = higher' },
+        { label: 'Run Length  ', value: metrics.runLength, weight: '10%', gloss: 'uninterrupted streak' },
       ];
       for (const axis of axes) {
-        console.log(`  ${axis.label}  ${bar(axis.value)}  ${axis.value.toFixed(1).padStart(5)}  ${axis.weight}`);
+        console.log(`  ${axis.label}  ${bar(axis.value)}  ${axis.value.toFixed(1).padStart(5)}  ${axis.weight}  ${axis.gloss}`);
       }
 
       console.log('');
       console.log(`  ${axisInsight(metrics)}`);
+
+      if (codexCount > 0) {
+        console.log('');
+        console.log('  Note: subagent detection not yet supported for Codex — Delegation may be underreported.');
+      }
+
       console.log('');
       console.log(sep);
 
@@ -106,7 +135,8 @@ program
           console.log('  Done. See the leaderboard:');
           console.log('  https://agentry-cli.vercel.app');
         } else {
-          console.log('  Submission failed. Try again later.');
+          console.log(`  Submission failed: ${result.message}`);
+          console.log('  Try again later or check https://agentry-cli.vercel.app');
         }
       } else {
         console.log('  Share your score (optional):');
@@ -123,7 +153,15 @@ program
       console.log('');
 
     } catch (err) {
-      console.error('Error during scan:', err instanceof Error ? err.message : String(err));
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('EACCES') || msg.includes('permission denied')) {
+        console.error('Error: Cannot read session files. Check permissions on ~/.claude/projects and ~/.codex/');
+      } else if (msg.includes('ENOENT')) {
+        console.error('Error: Session directory not found. Make sure Claude Code or Codex is installed and you have run at least one session.');
+      } else {
+        console.error(`Error: ${msg}`);
+        console.error('Tip: try --days 30 to look further back, or check your session log directories.');
+      }
       process.exit(1);
     }
   });

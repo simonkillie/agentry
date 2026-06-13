@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
-# Acceptance gate for the agentry MVP. THIS FILE IS THE CONTRACT.
+# Acceptance gate for agentry. THIS FILE IS THE CONTRACT.
 # The agent must make the project satisfy these checks. It must NOT weaken them.
 # On any failed check it prints `FAIL <reason>` and exits non-zero.
 # Only when every check passes does it print the final line:  VERIFY OK <url>
-#
-# Paths/script names below assume the conventions in SPEC.md. The agent may adapt
-# a path if its layout differs, but must not remove or soften a check.
 
 set -uo pipefail
 fail() { echo "FAIL $*"; exit 1; }
@@ -64,10 +61,10 @@ code=$(curl -s -o /tmp/home.html -w "%{http_code}" "$URL")
 [ "$code" = "200" ] || fail "home returned HTTP $code"
 grep -qi "leaderboard" /tmp/home.html || fail "live home does not render a leaderboard"
 
-# 12. live submit API persists a test entry that then appears
+# 12. live submit API persists a valid test entry that then appears
 marker="verify-$(date +%s)"
 curl -s -X POST "$URL/api/submit" -H 'content-type: application/json' \
-  -d "{\"handle\":\"$marker\",\"score\":42,\"profile\":\"test\"}" >/tmp/post.log 2>&1 \
+  -d "{\"handle\":\"$marker\",\"score\":42,\"profile\":\"Hand-Coder\"}" >/tmp/post.log 2>&1 \
   || fail "live submit POST failed"
 sleep 3
 if ! { curl -s "$URL/api/leaderboard" | grep -q "$marker"; } \
@@ -84,5 +81,32 @@ grep -qi "dry" /tmp/npx.log || fail "npx agentry-cli scan does not default to dr
 
 # 15. README documents npx usage
 grep -qiE "npx agentry" README.md || fail "README does not document npx agentry usage"
+
+# ── Phase 3: Quality & Hardening ─────────────────────────────────────────────
+
+# 16. submit API rejects profiles not in the known enum (must return 400)
+bad_code=$(curl -s -o /tmp/bad_profile.log -w "%{http_code}" -X POST "$URL/api/submit" \
+  -H 'content-type: application/json' \
+  -d '{"handle":"enum-test","score":50,"profile":"InvalidProfile"}')
+[ "$bad_code" = "400" ] || fail "submit API accepted invalid profile string (got HTTP $bad_code, expected 400)"
+
+# 17. leaderboard API does not expose device_hash to clients
+leaderboard_json=$(curl -s "$URL/api/leaderboard")
+if echo "$leaderboard_json" | grep -q "device_hash"; then
+  fail "leaderboard API exposes device_hash field to clients"
+fi
+
+# 18. CLI fetch to submit endpoint has a timeout guard
+grep -qE "AbortSignal\.timeout|AbortController" packages/cli/src/submit.ts \
+  || fail "submit.ts fetch call has no timeout (AbortSignal.timeout or AbortController required)"
+
+# 19. CLI handles zero sessions gracefully — no fake score rendered
+node "$CLI" scan --days 0 >/tmp/zero.log 2>&1 || true
+grep -qiE "no sessions|no data|no .* logs|nothing to scan|0 sessions found" /tmp/zero.log \
+  || fail "CLI does not show a no-data message when zero sessions are found (--days 0)"
+
+# 20. validation.ts validates profile against the known enum
+grep -qE "Hand-Coder|Fleet Orchestrator" apps/web/lib/validation.ts \
+  || fail "validation.ts does not validate profile against the known enum values"
 
 echo "VERIFY OK $URL"

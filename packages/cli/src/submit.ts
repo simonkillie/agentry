@@ -56,24 +56,30 @@ export async function submitPayload(
   payload: SubmitPayload,
   endpoint = 'https://agentry-cli.vercel.app/api/submit',
 ): Promise<{ ok: boolean; message: string }> {
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      handle: payload.handle,
-      score: payload.scores.composite,
-      profile: payload.profile,
-      device_hash: payload.deviceHash,
-      parallelism_score: payload.scores.parallelism,
-      delegation_score: payload.scores.delegationDepth,
-      hands_off_score: payload.scores.handsOffRatio,
-      run_length_score: payload.scores.runLength,
-      client_type: payload.clientType,
-    }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(10_000),
+      body: JSON.stringify({
+        handle: payload.handle,
+        score: payload.scores.composite,
+        profile: payload.profile,
+        device_hash: payload.deviceHash,
+        parallelism_score: payload.scores.parallelism,
+        delegation_score: payload.scores.delegationDepth,
+        hands_off_score: payload.scores.handsOffRatio,
+        run_length_score: payload.scores.runLength,
+        client_type: payload.clientType,
+      }),
+    });
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : 'Network error' };
+  }
 
   if (!response.ok) {
-    throw new Error(`Submit failed: ${response.status} ${response.statusText}`);
+    return { ok: false, message: `Server returned ${response.status}` };
   }
 
   return response.json() as Promise<{ ok: boolean; message: string }>;

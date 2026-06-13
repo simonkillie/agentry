@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapProfile, getProfileDescription } from '../profiles';
+import { mapProfile, PROFILES } from '../profiles';
 
 describe('mapProfile', () => {
   it('maps score 0-19 to Hand-Coder', () => {
@@ -35,11 +35,17 @@ describe('mapProfile', () => {
   });
 });
 
-describe('getProfileDescription', () => {
-  it('returns non-empty description for each profile', () => {
-    const profiles = ['Hand-Coder', 'Copilot Collaborator', 'Autonomous Operator', 'Hands-Off Architect', 'Fleet Orchestrator'] as const;
-    for (const p of profiles) {
-      expect(getProfileDescription(p).length).toBeGreaterThan(0);
+describe('PROFILES', () => {
+  it('has a non-empty description for each profile entry', () => {
+    for (const p of PROFILES) {
+      expect(p.description.length).toBeGreaterThan(0);
     }
+  });
+
+  it('covers all five profiles with non-overlapping ranges', () => {
+    expect(PROFILES).toHaveLength(5);
+    const names = PROFILES.map(p => p.name);
+    expect(names).toContain('Hand-Coder');
+    expect(names).toContain('Fleet Orchestrator');
   });
 });

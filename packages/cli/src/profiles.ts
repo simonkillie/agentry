@@ -47,6 +47,3 @@ export function mapProfile(score: number): Profile {
   return 'Fleet Orchestrator';
 }
 
-export function getProfileDescription(profile: Profile): string {
-  return PROFILES.find((p) => p.name === profile)?.description ?? '';
-}

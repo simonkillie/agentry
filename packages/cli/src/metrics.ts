@@ -28,7 +28,7 @@ export function normalizeHandsOffRatio(humanCharsPerToolCall: number): number {
 }
 
 export function normalizeRunLength(meanStreakMinutes: number): number {
-  // Saturates around 90 minutes
+  // Saturates at 150 minutes (score reaches 100 at 150 min mean streak)
   return Math.min(100, (meanStreakMinutes / 1.5));
 }
 
@@ -93,7 +93,7 @@ function computeDelegation(sessions: ParsedSession[]): { toolsPerTurn: number; s
     }
   }
 
-  const toolsPerTurn = totalHumanTurns > 0 ? totalToolCalls / totalHumanTurns : totalToolCalls > 0 ? totalToolCalls : 0;
+  const toolsPerTurn = totalHumanTurns > 0 ? totalToolCalls / totalHumanTurns : 0;
   const subagentFanout = totalAssistantEvents > 0 ? subagentEvents / totalAssistantEvents + 1 : 1;
   return { toolsPerTurn, subagentFanout };
 }
