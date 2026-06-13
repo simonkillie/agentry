@@ -79,7 +79,7 @@ fi
 npm view agentry-cli version >/dev/null 2>&1 || fail "npm package agentry-cli not published to registry"
 
 # 14. npx distribution works end-to-end
-timeout 90 npx --yes agentry-cli@latest scan >/tmp/npx.log 2>&1 || fail "npx agentry-cli scan failed"
+perl -e 'alarm 90; exec @ARGV' -- npx --yes agentry-cli@latest scan >/tmp/npx.log 2>&1 || fail "npx agentry-cli scan failed"
 grep -qi "dry" /tmp/npx.log || fail "npx agentry-cli scan does not default to dry-run"
 
 # 15. README documents npx usage
