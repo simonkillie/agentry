@@ -75,16 +75,25 @@ code=$(curl -s -o /tmp/home.html -w "%{http_code}" "$URL")
 [ "$code" = "200" ] || fail "home returned HTTP $code"
 grep -qi "leaderboard" /tmp/home.html || fail "live home does not render a leaderboard"
 
-# 12. live submit API persists a valid test entry that then appears
+# 12. live submit API persists a valid test entry (WITH a device_hash, so this
+#     exercises the ON CONFLICT upsert path that real CLI submits use) that then
+#     appears, and cleans itself up so verify-* rows never accumulate.
 marker="verify-$(date +%s)"
-curl -s -X POST "$URL/api/submit" -H 'content-type: application/json' \
-  -d "{\"handle\":\"$marker\",\"score\":42,\"profile\":\"Hand-Coder\"}" >/tmp/post.log 2>&1 \
-  || fail "live submit POST failed"
+verify_hash="verifybot00000001"
+submit_code=$(curl -s -o /tmp/post.log -w "%{http_code}" -X POST "$URL/api/submit" -H 'content-type: application/json' \
+  -d "{\"handle\":\"$marker\",\"score\":42,\"profile\":\"Hand-Coder\",\"device_hash\":\"$verify_hash\",\"client_type\":\"Claude Code\"}")
+[ "$submit_code" = "200" ] || { cat /tmp/post.log; fail "live submit POST returned HTTP $submit_code (expected 200) — device_hash upsert path may be broken"; }
 sleep 3
 if ! { curl -s "$URL/api/leaderboard" | grep -q "$marker"; } \
    && ! { curl -s "$URL" | grep -q "$marker"; }; then
   fail "submitted test entry did not appear on the live leaderboard"
 fi
+# Clean up the verify bot row so test records don't pile up on the public board
+DATABASE_URL="$DATABASE_URL" node --input-type=module -e "
+import { neon } from '@neondatabase/serverless';
+const sql = neon(process.env.DATABASE_URL);
+await sql\`DELETE FROM entries WHERE device_hash = \${'$verify_hash'} OR handle LIKE 'verify-%'\`;
+" >/tmp/cleanup.log 2>&1 || true
 
 # 13. npm package published
 npm view agentry-cli version >/dev/null 2>&1 || fail "npm package agentry-cli not published to registry"

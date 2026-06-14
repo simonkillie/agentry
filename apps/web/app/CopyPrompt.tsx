@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 
-const PROMPT = "Run `npx agentry-cli scan --submit` to measure my autonomy score and post it to the agentry leaderboard. Only numeric session metadata is transmitted — no prompts, code, or file paths.";
+const PROMPT = "Run `npx agentry-cli scan` to measure my developer autonomy score from my local Claude Code/Codex logs, then show me the score breakdown. Do NOT submit yet. After showing it, ask me whether I want to publish it to the agentry leaderboard — only if I say yes, run `npx agentry-cli scan --submit`. Only numeric session metadata is ever transmitted; no prompts, code, or file paths.";
 
 export default function CopyPrompt() {
   const [copied, setCopied] = useState(false);

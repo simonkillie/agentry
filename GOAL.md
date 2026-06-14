@@ -1,43 +1,32 @@
 # agentry — Goal & Loop Instructions
 
-## Current goal (Phase 3 — Quality & Hardening)
+## Current goal (Phase 4 — UX fixes + submit 500 bug)
 
 ```
-/goal Fix all issues listed in CHECKLIST.md Phase 3, working items in order and ticking
-each box when its check passes. The goal is met only when, in this conversation, you have
-run `bash verify.sh` from a clean state after your final change and its output ends with
-a line beginning `VERIFY OK ` followed by an https:// production URL, with no line of
-that output containing the token `FAIL`. Constraints: do not edit verify.sh to remove,
-skip, or weaken any check; do not mark a CHECKLIST item complete unless its check actually
-passed; never commit secrets or session transcript content. If not met after 40 turns, stop
-and write remaining work to PROGRESS.md.
+/goal Complete every item in CHECKLIST.md Phase 4 and verify each works before exiting.
+The goal is met only when: (a) a real CLI-style submit WITH a device_hash returns HTTP 200
+on the live site (the 500 bug is fixed), (b) the leaderboard renders the rankings table
+ABOVE the "Get your score" box, with a CEST-formatted timestamp column and a scroll region
+that activates past ~20 rows, (c) the copied agent prompt instructs the agent to ask the user
+before submitting, (d) stale verify-*/test records are gone and verify.sh no longer leaves new
+ones behind, and (e) `bash verify.sh` ends with `VERIFY OK <https url>` and no FAIL lines.
+Constraints: do not weaken verify.sh; never commit secrets; verify live behavior with curl
+before declaring done.
 ```
 
 ---
 
 ## How the loop works
 
-The `/goal` primitive keeps Claude working turn after turn. The evaluator checks whether
-`verify.sh` printed its success sentinel (`VERIFY OK <url>`) in the conversation.
+The `/goal` primitive keeps Claude working turn after turn. "Done" = `verify.sh` printed
+`VERIFY OK <url>` in the transcript AND the live-behavior curls in CHECKLIST Phase 4 pass.
 
-### Prerequisites (must exist before launch)
-
+### Prerequisites
 ```bash
-gh auth login
 export VERCEL_TOKEN=...
-export DATABASE_URL=...   # Neon Postgres connection string (same DB as Vercel uses)
-export NPM_TOKEN=...      # npm automation token (bypasses 2FA)
+export DATABASE_URL=...   # Neon Postgres (same DB Vercel uses)
+export NPM_TOKEN=...      # npm automation token
 ```
-
-### Launch
-
-Start Claude Code in this directory, enable auto mode, then paste the goal condition above
-after `/goal`. For headless: `claude -p --dangerously-skip-permissions`.
-
-### If it stops short
-
-Relaunch and paste the same condition. The agent rebuilds state from CHECKLIST.md and
-PROGRESS.md and continues.
 
 ---
 
@@ -45,13 +34,13 @@ PROGRESS.md and continues.
 
 | Phase | Goal | Status |
 |-------|------|--------|
-| Phase 1 — MVP | Build CLI + web leaderboard, pass 15 verify.sh checks | ✅ Done |
-| Phase 2 — Distribution | Publish npm package, deploy to agentry-cli.vercel.app | ✅ Done |
-| Phase 3 — Quality | Fix 20+ issues from 3-reviewer audit; pass all 20 verify.sh checks | 🔄 Active |
+| Phase 1 — MVP | Build CLI + web leaderboard, 15 verify checks | ✅ Done |
+| Phase 2 — Distribution | Publish npm, deploy to agentry-cli.vercel.app | ✅ Done |
+| Phase 3 — Quality | Fix 20+ audit issues, 20 verify checks | ✅ Done |
+| Phase 3.5 — Security | Anonymous handle/device id, body cap, supply-chain review | ✅ Done |
+| Phase 4 — UX + 500 fix | Table order, timestamps, scroll, agent-prompt-to-confirm, fix submit 500 | 🔄 Active |
 
 ---
 
 ## verify.sh contract
-
-`verify.sh` is the acceptance gate. It must never be weakened. Each phase adds checks;
-no check is ever removed. Current total: **20 checks**.
+`verify.sh` is the acceptance gate; never weaken it. Each phase adds checks; none are removed.

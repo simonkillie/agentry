@@ -4,6 +4,8 @@ import CopyPrompt from './CopyPrompt';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+const SCROLL_THRESHOLD = 20; // table becomes a scroll region past this many rows
+
 const PROFILE_COLOR: Record<string, string> = {
   'Fleet Orchestrator': '#a78bfa',
   'Hands-Off Architect': '#60a5fa',
@@ -24,15 +26,33 @@ function profileColor(profile: string): string {
   return PROFILE_COLOR[profile] ?? '#6b7280';
 }
 
+// Format a submission timestamp in the user's local European time (CEST/CET).
+function formatWhen(value: string | null): string {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return '—';
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'Europe/Oslo',
+    timeZoneName: 'short',
+  }).format(d);
+}
+
 export default async function Home() {
   let entries: Entry[] = [];
   let error: string | null = null;
 
   try {
     entries = await getLeaderboard();
-  } catch (err) {
-    error = err instanceof Error ? err.message : 'Failed to load leaderboard';
+  } catch {
+    error = 'Failed to load the leaderboard. Please try again shortly.';
   }
+
+  const scrolls = entries.length > SCROLL_THRESHOLD;
 
   return (
     <>
@@ -47,13 +67,18 @@ export default async function Home() {
         .title { font-size: 26px; font-weight: 700; color: #f5f5f5; margin-bottom: 8px; letter-spacing: -0.02em; }
         .subtitle { color: #6b7280; font-size: 13px; max-width: 520px; line-height: 1.6; }
         .subtitle strong { color: #9ca3af; font-weight: 500; }
+        .rankings { margin-bottom: 48px; }
         .section-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #4b5563; margin-bottom: 16px; }
+        .table-scroll { position: relative; }
+        .table-scroll.scroll { max-height: 640px; overflow-y: auto; border-bottom: 1px solid #1f1f1f; }
         .table { width: 100%; border-collapse: collapse; }
         .table thead tr { border-bottom: 1px solid #1f1f1f; }
         .table th { text-align: left; padding: 0 12px 12px; font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: #4b5563; }
+        .table-scroll.scroll thead th { position: sticky; top: 0; background: #0d0d0d; z-index: 1; padding-top: 12px; box-shadow: inset 0 -1px 0 #1f1f1f; }
         .table th:first-child { width: 36px; }
         .table th:nth-child(3) { width: 120px; }
         .table th:nth-child(5) { width: 90px; }
+        .table th:nth-child(6) { width: 132px; }
         .table tbody tr { border-bottom: 1px solid #111; }
         .table tbody tr:hover { background: #111; }
         .table td { padding: 13px 12px; vertical-align: middle; }
@@ -68,6 +93,7 @@ export default async function Home() {
         .client-badge { display: inline-block; font-size: 10px; font-weight: 500; letter-spacing: 0.04em; padding: 2px 6px; border-radius: 3px; background: #1a1a1a; color: #6b7280; border: 1px solid #222; white-space: nowrap; }
         .client-badge.claude { color: #f59e0b; border-color: #292310; background: #141008; }
         .client-badge.codex { color: #60a5fa; border-color: #0d1929; background: #070d1a; }
+        .when { font-size: 11px; color: #4b5563; font-variant-numeric: tabular-nums; white-space: nowrap; }
         .empty { text-align: center; padding: 48px 12px; color: #374151; font-size: 13px; }
         .agent-box { margin-bottom: 48px; border: 1px solid #2a2a2a; border-left: 3px solid #4b5563; border-radius: 8px; padding: 20px 24px; background: #111; }
         .agent-box-title { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #6b7280; margin-bottom: 12px; }
@@ -95,6 +121,7 @@ export default async function Home() {
           .container { padding: 40px 16px; }
           .table th:nth-child(4), .table td:nth-child(4) { display: none; }
           .table th:nth-child(5), .table td:nth-child(5) { display: none; }
+          .table th:nth-child(6), .table td:nth-child(6) { display: none; }
           .footer { flex-direction: column; align-items: flex-start; gap: 12px; }
           .profile-row { flex-wrap: wrap; }
           .agent-box { padding: 16px; }
@@ -106,17 +133,77 @@ export default async function Home() {
           <h1 className="title">Who lets their agent run?</h1>
           <p className="subtitle">
             Scores how autonomously you work — derived from real Claude Code and Codex session data, not self-reported.
-            Paste the prompt below into your agent and it will scan your local logs and score you.
-            Submitting to the leaderboard is <strong>optional</strong>.
+            Run the prompt below in your agent to get scored. Submitting to the leaderboard is <strong>optional</strong>.
           </p>
         </header>
+
+        {error ? (
+          <div className="error">{error}</div>
+        ) : (
+          <section className="rankings">
+            <div className="section-label">Rankings</div>
+            <div className={`table-scroll${scrolls ? ' scroll' : ''}`}>
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Handle</th>
+                    <th>Score</th>
+                    <th>Profile</th>
+                    <th>Client</th>
+                    <th>Submitted</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entries.map((entry: Entry, idx: number) => {
+                    const score = Number(entry.score);
+                    const color = profileColor(entry.profile);
+                    const clientLower = (entry.client_type ?? '').toLowerCase();
+                    const clientClass = clientLower.includes('claude') ? 'claude' : clientLower.includes('codex') ? 'codex' : '';
+                    return (
+                      <tr key={entry.id}>
+                        <td><span className="rank">{idx + 1}</span></td>
+                        <td><span className="handle">{entry.handle}</span></td>
+                        <td>
+                          <div className="score-cell">
+                            <div className="score-bar-track">
+                              <div className="score-bar-fill" style={{ width: `${score}%`, background: color }} />
+                            </div>
+                            <span className="score-num">{score.toFixed(0)}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="profile-pill">
+                            <span className="profile-dot" style={{ background: color }} />
+                            {entry.profile}
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`client-badge ${clientClass}`}>{entry.client_type ?? '—'}</span>
+                        </td>
+                        <td><span className="when">{formatWhen(entry.created_at)}</span></td>
+                      </tr>
+                    );
+                  })}
+                  {entries.length === 0 && (
+                    <tr>
+                      <td colSpan={6}>
+                        <div className="empty">No entries yet — run the prompt below in your agent.</div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
 
         <div className="agent-box">
           <div className="agent-box-title">Get your score</div>
           <ol className="steps">
             <li><span className="step-num">1.</span><span className="step-text">Copy the prompt below</span></li>
             <li><span className="step-num">2.</span><span className="step-text">Paste it into <strong>Claude Code or Codex</strong> as a message to your agent</span></li>
-            <li><span className="step-num">3.</span><span className="step-text">Your score appears in your terminal — sharing is <strong>optional</strong></span></li>
+            <li><span className="step-num">3.</span><span className="step-text">Your score appears in your terminal — your agent will <strong>ask before</strong> publishing anything</span></li>
           </ol>
           <CopyPrompt />
           <p className="privacy-note">
@@ -124,63 +211,6 @@ export default async function Home() {
             <a href="https://github.com/simonkillie/agentry" target="_blank" rel="noopener">Source code on GitHub.</a>
           </p>
         </div>
-
-        {error ? (
-          <div className="error">{error}</div>
-        ) : (
-          <section>
-            <div className="section-label">Rankings</div>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Handle</th>
-                  <th>Score</th>
-                  <th>Profile</th>
-                  <th>Client</th>
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map((entry: Entry, idx: number) => {
-                  const score = Number(entry.score);
-                  const color = profileColor(entry.profile);
-                  const clientLower = (entry.client_type ?? '').toLowerCase();
-                  const clientClass = clientLower.includes('claude') ? 'claude' : clientLower.includes('codex') ? 'codex' : '';
-                  return (
-                    <tr key={entry.id}>
-                      <td><span className="rank">{idx + 1}</span></td>
-                      <td><span className="handle">{entry.handle}</span></td>
-                      <td>
-                        <div className="score-cell">
-                          <div className="score-bar-track">
-                            <div className="score-bar-fill" style={{ width: `${score}%`, background: color }} />
-                          </div>
-                          <span className="score-num">{score.toFixed(0)}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="profile-pill">
-                          <span className="profile-dot" style={{ background: color }} />
-                          {entry.profile}
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`client-badge ${clientClass}`}>{entry.client_type ?? '—'}</span>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {entries.length === 0 && (
-                  <tr>
-                    <td colSpan={5}>
-                      <div className="empty">No entries yet — paste the prompt above into your agent.</div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </section>
-        )}
 
         <div className="profiles-grid">
           <div className="profiles-grid-title">Profiles</div>
